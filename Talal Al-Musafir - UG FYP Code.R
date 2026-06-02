@@ -498,26 +498,26 @@ apr25_pa <- apr25_multivar
 jul25_pa <- jul25_multivar
 mar26_pa <- mar26_multivar
 
-# First column of apr25 multivar that contain species presence data (ends at col 24)
-column <- 8
+# First column of apr25 multivar that contain species presence p-value data (col 27-43)
+column <- 27
 row <- 1
 
 while(row <= 11){
   print("row")
   print(row)
   
-  while(column <= 24){
+  while(column <= 43){
     print("column")
     print(column)
     
     print("value")
     print(apr25_multivar[row, column])
     
-    if(apr25_multivar[row, column] == 0){
+    if(apr25_multivar[row, column] > 0.05){
       apr25_pa[row, column] <- 0
       print("ABSENT")
     }
-    else if(apr25_multivar[row, column] >= 1){
+    else if(apr25_multivar[row, column] <= 0.05){
       apr25_pa[row, column] <- 1
       print("PRESENT")
     }
@@ -527,32 +527,32 @@ while(row <= 11){
     }
     column <- column + 1
   }
-  column <- 8
+  column <- 27
   
   row <- row + 1
   print("---------------")
 }
 
 # Reset for jul25
-column <- 8
+column <- 27
 row <- 1
 
 while(row <= 9){
   print("row")
   print(row)
   
-  while(column <= 24){
+  while(column <= 43){
     print("column")
     print(column)
     
     print("value")
     print(jul25_multivar[row, column])
     
-    if(jul25_multivar[row, column] == 0){
+    if(jul25_multivar[row, column] > 0.05){
       jul25_pa[row, column] <- 0
       print("ABSENT")
     }
-    else if(jul25_multivar[row, column] >= 1){
+    else if(jul25_multivar[row, column] <= 0.05){
       jul25_pa[row, column] <- 1
       print("PRESENT")
     }
@@ -562,32 +562,32 @@ while(row <= 9){
     }
     column <- column + 1
   }
-  column <- 8
+  column <- 27
   
   row <- row + 1
   print("---------------")
 }
 
 # Reset again
-column <- 8
+column <- 27
 row <- 1
 
 while(row <= 12){
   print("row")
   print(row)
   
-  while(column <= 24){
+  while(column <= 43){
     print("column")
     print(column)
     
     print("value")
     print(mar26_multivar[row, column])
     
-    if(mar26_multivar[row, column] == 0){
+    if(mar26_multivar[row, column] > 0.05){
       mar26_pa[row, column] <- 0
       print("ABSENT")
     }
-    else if(mar26_multivar[row, column] >= 1){
+    else if(mar26_multivar[row, column] <= 0.05){
       mar26_pa[row, column] <- 1
       print("PRESENT")
     }
@@ -597,16 +597,16 @@ while(row <= 12){
     }
     column <- column + 1
   }
-  column <- 8
+  column <- 27
   
   row <- row + 1
   print("---------------")
 }
 
 # Remove unneeded columns from P/A matrix
-apr25_pa <- apr25_pa[, -c(1:7,25:53)]
-jul25_pa <- jul25_pa[, -c(1:7,25:53)]
-mar26_pa <- mar26_pa[, -c(1:7,25:53)]
+apr25_pa <- apr25_pa[, -c(1:26,44:58)]
+jul25_pa <- jul25_pa[, -c(1:26,44:58)]
+mar26_pa <- mar26_pa[, -c(1:26,44:58)]
 all_sites_pa <- rbind(apr25_pa,
                       jul25_pa,
                       mar26_pa)
@@ -773,7 +773,7 @@ tibble(percent_explained = all_sites_pcoa$percent_explained,
   # Check as many combinations of covariates as possible
   # Check distribution of covariates, do we need to try log-transforming anything?
 
-hist(all_sites_multivar$forest_cover) # Yes
+hist(all_sites_multivar$forest_cover) # Try logging it
 all_sites_multivar$log_forest_cover <- log(all_sites_multivar$forest_cover + 0.001) # + 0.001 removes -Inf errors
 hist(all_sites_multivar$log_forest_cover)
 
@@ -856,16 +856,15 @@ all_sites_multivar <- rbind(apr25_multivar[,-c(55,56,57,58)],
     # Spp richness
   # Explanatory 1:
     # Forest cover
-    # Log(forest cover)
   # Explanatory 2:
     # Dist from road
     # Mean NDSI
     # SD of NDSI
 
-# 12 total models to try, just switch out terms below
+# 6 total models to try, just switch out terms below
 
-# PCoA ~ Dist from road
-all_sites_multivar_glm <- glm(pcoa ~ dist_from_road_metres + forest_cover,
+# 1. PCoA ~ Dist from road
+all_sites_multivar_glm <- glm(pcoa ~ dist_from_road_metres,
                               family = "gaussian", data = all_sites_multivar)
 summary(all_sites_multivar_glm)
 RsquareAdj(all_sites_multivar_glm)
@@ -873,8 +872,8 @@ RsquareAdj(all_sites_multivar_glm)
 par(mfrow = c(2,2))
 plot(all_sites_multivar_glm)
 
-# PCoA ~ NDSI
-all_sites_multivar_glm2 <- glm(pcoa ~ mean_ndsi + log_forest_cover,
+# 2. PCoA ~ Mean NDSI
+all_sites_multivar_glm2 <- glm(pcoa ~ mean_ndsi,
                               family = "gaussian", data = all_sites_multivar)
 summary(all_sites_multivar_glm2)
 RsquareAdj(all_sites_multivar_glm2)
@@ -882,8 +881,8 @@ RsquareAdj(all_sites_multivar_glm2)
 par(mfrow = c(2,2))
 plot(all_sites_multivar_glm2)
 
-# Richness ~ Dist from road
-all_sites_multivar_glm3 <- glm(spp_richness ~ dist_from_road_metres + log_forest_cover,
+# 3. Richness ~ Dist from road
+all_sites_multivar_glm3 <- glm(spp_richness ~ dist_from_road_metres,
                                family = "gaussian", data = all_sites_multivar)
 summary(all_sites_multivar_glm3)
 RsquareAdj(all_sites_multivar_glm3) 
@@ -891,8 +890,8 @@ RsquareAdj(all_sites_multivar_glm3)
 par(mfrow = c(2,2))
 plot(all_sites_multivar_glm3)
 
-# Richness ~ NDSI
-all_sites_multivar_glm4 <- glm(spp_richness ~ mean_ndsi + log_forest_cover,
+# 4. Richness ~ Mean NDSI
+all_sites_multivar_glm4 <- glm(spp_richness ~ mean_ndsi,
                                family = "gaussian", data = all_sites_multivar)
 summary(all_sites_multivar_glm4)
 RsquareAdj(all_sites_multivar_glm4)
@@ -900,7 +899,34 @@ RsquareAdj(all_sites_multivar_glm4)
 par(mfrow = c(2,2))
 plot(all_sites_multivar_glm4)
 
-# No significance anywhere 
+# 5. PCoA ~ SD of NDSI
+all_sites_multivar_glm5 <- glm(pcoa ~ sd_ndsi,
+                               family = "gaussian", data = all_sites_multivar)
+summary(all_sites_multivar_glm5)
+RsquareAdj(all_sites_multivar_glm5)
+
+par(mfrow = c(2,2))
+plot(all_sites_multivar_glm5)
+
+# 6. Richness ~ SD in NDSI
+all_sites_multivar_glm6 <- glm(spp_richness ~ sd_ndsi,
+                               family = "gaussian", data = all_sites_multivar)
+summary(all_sites_multivar_glm6)
+RsquareAdj(all_sites_multivar_glm6)
+
+par(mfrow = c(2,2))
+plot(all_sites_multivar_glm6)
+
+# No significance anywhere
+
+# Check forest cover
+all_sites_multivar_glm7 <- glm(pcoa ~ forest_cover,
+                               family = "gaussian", data = all_sites_multivar)
+summary(all_sites_multivar_glm7)
+
+all_sites_multivar_glm8 <- glm(spp_richness ~ forest_cover,
+                               family = "gaussian", data = all_sites_multivar)
+summary(all_sites_multivar_glm8)
 
 ###
 
@@ -954,7 +980,7 @@ sd(all_sites_multivar$mean_ndsi)
 
 ###
 
-# Pairwise plots
+# Pairwise plots (didn't use these)
 ggpairs(data = apr25_multivar,
         columns = c(54,53,49,6),
         columnLabels = c("PCoA Axis 1", "SD of NDSI", "Dist. from M25", "Forest cover"))
@@ -1112,30 +1138,93 @@ ggplot(all_sites_multivar,
 # PCoA ~ Dist from road
 ggplot(all_sites_multivar,
        aes(x = dist_from_road_metres,
-           y = pcoa,
-           group = forest_bin,
-           colour = forest_bin)) +
+           y = pcoa)) +
   geom_point() +
   geom_smooth(method = "lm",
-              se = T) +
+              se = T,
+              color = "#ff00bb") +
   labs(x = "Distance from M25 (m)",
-       y = "PCoA Axis 1",
-       colour = "Forest cover")
+       y = "PCoA Axis 1") +
+  scale_x_continuous(breaks=seq(0,2500,by=1000))
 
-all_sites_multivar$log_forest_bin <- cut(all_sites_multivar$log_forest_cover, 2,
-                                     labels = c("-6.91 ~ -3.45", "-3.45 ~ 0.00791"))
-
-# Spp richness ~ Mean NDSI
+# PCoA ~ Mean NDSI
 ggplot(all_sites_multivar,
        aes(x = mean_ndsi,
-           y = spp_richness,
-           group = log_forest_bin,
-           colour = log_forest_bin)) +
+           y = pcoa)) +
   geom_point() +
   geom_smooth(method = "lm",
-              se = T) +
+              se = T,
+              color = "#ff0000") +
   labs(x = "Mean NDSI",
-       y = "Species Richness",
-       colour = "Log(forest cover)")
+       y = "")
+
+# PCoA ~ SD NDSI
+ggplot(all_sites_multivar,
+       aes(x = sd_ndsi,
+           y = pcoa)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = T,
+              color = "#ff8800") +
+  labs(x = "SD of NDSI",
+       y = "")
+
+# PCoA ~ Forest cover
+ggplot(all_sites_multivar,
+       aes(x = forest_cover,
+           y = pcoa)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = T,
+              color = "#ffff55") +
+  labs(x = "Forest cover",
+       y = "")
+
+##
+
+# Richness ~ Dist from road
+ggplot(all_sites_multivar,
+       aes(x = dist_from_road_metres,
+           y = spp_richness)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = T,
+              color = "#0000cc") +
+  labs(x = "Distance from M25 (m)",
+       y = "Species Richness") +
+  scale_x_continuous(breaks=seq(0,2500,by=1000))
+
+# Richness ~ Mean NDSI
+ggplot(all_sites_multivar,
+       aes(x = mean_ndsi,
+           y = spp_richness)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = T,
+              color = "#00aadd") +
+  labs(x = "Mean NDSI",
+       y = "")
+
+# Richness ~ SD NDSI
+ggplot(all_sites_multivar,
+       aes(x = sd_ndsi,
+           y = spp_richness)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = T,
+              color = "#00bb88") +
+  labs(x = "SD of NDSI",
+       y = "")
+
+# Richness ~ Forest cover
+ggplot(all_sites_multivar,
+       aes(x = forest_cover,
+           y = spp_richness)) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = T,
+              color = "#55aa00") +
+  labs(x = "Forest cover",
+       y = "")
 
 ###
